@@ -1,0 +1,7 @@
+"C:\Program Files\JetBrains\CLion 2024.1\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2024.1/bin/ninja/win/x64/ninja.exe" -G Ninja -S C:\Users\Michael\Documents\.Code\jbc -B C:\Users\Michael\Documents\.Code\jbc\cmake-build-debug
+-- Configuring done (3.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: C:/Users/Michael/Documents/.Code/jbc/cmake-build-debug
+
+收集编译器信息时遇到问题:
+	g++.exe: fatal error: cannot execute 'C:/Program Files/JetBrains/CLion 2024.1/bin/mingw/bin/../libexec/gcc/x86_64-w64-mingw32/13.1.0/cc1plus.exe': CreateProcess: No such file or directory

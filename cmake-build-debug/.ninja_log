@@ -1,0 +1,6 @@
+# ninja log v5
+12	3999	7376532089800067	CMakeFiles/jbc.dir/main.cpp.obj	c0f7cedb9b8b25c6
+3999	4308	7376532092855858	jbc.exe	45162f7ee0b69205
+40	685	7376337616752422	CMakeFiles/jbc.dir/VirusTotal.cpp.obj	5092634877a66e3e
+30	3431	7376532084135251	CMakeFiles/jbc.dir/FileOperation.cpp.obj	f8ebefc7cfaa213
+3	331	7376556898148637	build.ninja	73796f12eb36311a
