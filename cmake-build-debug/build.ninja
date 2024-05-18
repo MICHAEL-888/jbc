@@ -51,21 +51,21 @@ build cmake_object_order_depends_target_jbc: phony || CMakeFiles/jbc.dir
 
 build CMakeFiles/jbc.dir/main.cpp.obj: CXX_COMPILER__jbc_unscanned_Debug C$:/Users/Michael/Documents/.Code/jbc/main.cpp || cmake_object_order_depends_target_jbc
   DEP_FILE = CMakeFiles\jbc.dir\main.cpp.obj.d
-  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  FLAGS = -static -g -std=gnu++20 -fdiagnostics-color=always
   INCLUDES = -isystem "C:/Program Files/OpenSSL-Win64/include"
   OBJECT_DIR = CMakeFiles\jbc.dir
   OBJECT_FILE_DIR = CMakeFiles\jbc.dir
 
 build CMakeFiles/jbc.dir/VirusTotal.cpp.obj: CXX_COMPILER__jbc_unscanned_Debug C$:/Users/Michael/Documents/.Code/jbc/VirusTotal.cpp || cmake_object_order_depends_target_jbc
   DEP_FILE = CMakeFiles\jbc.dir\VirusTotal.cpp.obj.d
-  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  FLAGS = -static -g -std=gnu++20 -fdiagnostics-color=always
   INCLUDES = -isystem "C:/Program Files/OpenSSL-Win64/include"
   OBJECT_DIR = CMakeFiles\jbc.dir
   OBJECT_FILE_DIR = CMakeFiles\jbc.dir
 
 build CMakeFiles/jbc.dir/FileOperation.cpp.obj: CXX_COMPILER__jbc_unscanned_Debug C$:/Users/Michael/Documents/.Code/jbc/FileOperation.cpp || cmake_object_order_depends_target_jbc
   DEP_FILE = CMakeFiles\jbc.dir\FileOperation.cpp.obj.d
-  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  FLAGS = -static -g -std=gnu++20 -fdiagnostics-color=always
   INCLUDES = -isystem "C:/Program Files/OpenSSL-Win64/include"
   OBJECT_DIR = CMakeFiles\jbc.dir
   OBJECT_FILE_DIR = CMakeFiles\jbc.dir
@@ -79,7 +79,7 @@ build CMakeFiles/jbc.dir/FileOperation.cpp.obj: CXX_COMPILER__jbc_unscanned_Debu
 # Link the executable jbc.exe
 
 build jbc.exe: CXX_EXECUTABLE_LINKER__jbc_Debug CMakeFiles/jbc.dir/main.cpp.obj CMakeFiles/jbc.dir/VirusTotal.cpp.obj CMakeFiles/jbc.dir/FileOperation.cpp.obj | C$:/Program$ Files/OpenSSL-Win64/lib/libssl.lib C$:/Program$ Files/OpenSSL-Win64/lib/libcrypto.lib
-  FLAGS = -g
+  FLAGS = -static -g
   LINK_LIBRARIES = "C:/Program Files/OpenSSL-Win64/lib/libssl.lib"  "C:/Program Files/OpenSSL-Win64/lib/libcrypto.lib"  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\jbc.dir
   POST_BUILD = cd .

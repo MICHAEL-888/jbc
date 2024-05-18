@@ -25,9 +25,10 @@ int main() {
 
     std::cout << "***Created by Michael***" << std::endl << std::endl;
     std::cout << "使用提示：" << std::endl;
-    std::cout << "1、访问高权限文件夹会报错退出" << std::endl;
+    //std::cout << "1、访问高权限文件夹会报错退出" << std::endl;
     //这行输出很奇妙，不好评价，导致我去找半天getline的BUG
-    std::cout << "2、请输入文件夹路径例如:\"D:\\Folder\"" << std::endl;
+    std::cout << "1、请输入文件夹路径例如:\"D:\\Folder\"" << std::endl;
+    std::cout << "2、根目录请以\"\\\"结尾" << std::endl;
 
     //getline读入GBK输出也要GBK不然乱码
     SetConsoleOutputCP(936);
@@ -35,7 +36,7 @@ int main() {
 
     std::string Path;
     getline(std::cin, Path);
-    std::cout << Path << std::endl;
+    //std::cout << Path << std::endl;
 
     //再次设为UTF-8,要不然pause命令又乱码666
     SetConsoleOutputCP(CP_UTF8);
