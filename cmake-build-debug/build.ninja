@@ -82,7 +82,7 @@ build jbc.exe: CXX_EXECUTABLE_LINKER__jbc_Debug CMakeFiles/jbc.dir/main.cpp.obj 
   FLAGS = -static -g
   LINK_LIBRARIES = "C:/Program Files/OpenSSL-Win64/lib/libssl.lib"  "C:/Program Files/OpenSSL-Win64/lib/libcrypto.lib"  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\jbc.dir
-  POST_BUILD = cd .
+  POST_BUILD = C:\windows\system32\cmd.exe /C "cd /D C:\Users\Michael\Documents\.Code\jbc\cmake-build-debug && "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\mt.exe" -manifest C:/Users/Michael/Documents/.Code/jbc/app.manifest -outputresource:"C:/Users/Michael/Documents/.Code/jbc/cmake-build-debug/jbc.exe";#1"
   PRE_LINK = cd .
   TARGET_FILE = jbc.exe
   TARGET_IMPLIB = libjbc.dll.a
@@ -93,7 +93,7 @@ build jbc.exe: CXX_EXECUTABLE_LINKER__jbc_Debug CMakeFiles/jbc.dir/main.cpp.obj 
 # Utility command for edit_cache
 
 build CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D C:\Users\Michael\Documents\.Code\jbc\cmake-build-debug && "C:\Program Files\JetBrains\CLion 2024.1\bin\cmake\win\x64\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
+  COMMAND = C:\windows\system32\cmd.exe /C "cd /D C:\Users\Michael\Documents\.Code\jbc\cmake-build-debug && "C:\Program Files\JetBrains\CLion 2024.1\bin\cmake\win\x64\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -104,7 +104,7 @@ build edit_cache: phony CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D C:\Users\Michael\Documents\.Code\jbc\cmake-build-debug && "C:\Program Files\JetBrains\CLion 2024.1\bin\cmake\win\x64\bin\cmake.exe" --regenerate-during-build -SC:\Users\Michael\Documents\.Code\jbc -BC:\Users\Michael\Documents\.Code\jbc\cmake-build-debug"
+  COMMAND = C:\windows\system32\cmd.exe /C "cd /D C:\Users\Michael\Documents\.Code\jbc\cmake-build-debug && "C:\Program Files\JetBrains\CLion 2024.1\bin\cmake\win\x64\bin\cmake.exe" --regenerate-during-build -SC:\Users\Michael\Documents\.Code\jbc -BC:\Users\Michael\Documents\.Code\jbc\cmake-build-debug"
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
