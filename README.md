@@ -8,18 +8,21 @@
 
 2、静态编译
 
+3、manifest获取管理员权限
+
 ### 未实现：
 
-1、启动时检查管理员权限
+1、接入VirusTotal平台
 
-2、接入VirusTotal平台
+2、解构PE文件
 
-3、解构PE文件
+3、文件映射内存
 
-4、文件映射内存
+4、图形化界面
 
 
 
 ### 构建方式：
 
-构建程序前需安装OpenSSL库
+构建程序前需安装OpenSSL库：
+https://slproweb.com/products/Win32OpenSSL.html
