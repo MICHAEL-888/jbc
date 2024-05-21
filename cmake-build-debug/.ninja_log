@@ -1,6 +1,6 @@
 # ninja log v5
 13	960	7378686245874917	jbc.exe	6e784bf6031e9d82
-12	3772	7377215665199948	CMakeFiles/jbc.dir/main.cpp.obj	5173b65b6fb93138
-65	3999	7377212379578394	CMakeFiles/jbc.dir/FileOperation.cpp.obj	2a3116da1d4fa8ea
-40	615	7377212345732053	CMakeFiles/jbc.dir/VirusTotal.cpp.obj	46fc71571b76ea7b
-5	802	7378689562307099	build.ninja	73796f12eb36311a
+30	6403	7378825568963096	CMakeFiles/jbc.dir/main.cpp.obj	8825fab6681ee013
+87	5624	7378825561143310	CMakeFiles/jbc.dir/FileOperation.cpp.obj	ee7e15a107372730
+55	5797	7378825562410239	CMakeFiles/jbc.dir/VirusTotal.cpp.obj	888dfba020714cd1
+7	1066	7378825479661765	build.ninja	73796f12eb36311a

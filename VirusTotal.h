@@ -6,8 +6,12 @@
 #define JBC_VIRUSTOTAL_H
 
 
-class VirusTotal {
+#include <iostream>
+#include <string>
 
+class VirusTotal {
+public:
+    static std::string GetFileReport(const std::string &fileHash);
 };
 
 
