@@ -1,17 +1,7 @@
-"C:\Program Files\JetBrains\CLion 2024.1\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2024.1/bin/ninja/win/x64/ninja.exe" -DCMAKE_TOOLCHAIN_FILE=C:\Users\Michael\.vcpkg-clion\vcpkg\scripts\buildsystems\vcpkg.cmake -G Ninja -S C:\Users\Michael\Documents\.Code\jbc -B C:\Users\Michael\Documents\.Code\jbc\cmake-build-debug
--- Configuring done (3.1s)
-CMake Error at CMakeLists.txt:36 (target_link_libraries):
-  Target "jbc" links to:
-
-    NGHTTP2::NGHTTP2
-
-  but the target was not found.  Possible reasons include:
-
-    * There is a typo in the target name.
-    * A find_package call is missing for an IMPORTED target.
-    * An ALIAS target is missing.
-
-
-
--- Generating done (0.0s)
-CMake Generate step failed.  Build files cannot be regenerated correctly.
+"C:\Program Files\JetBrains\CLion 2024.1\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_TOOLCHAIN_FILE=C:\Users\Michael\.vcpkg-clion\vcpkg\scripts\buildsystems\vcpkg.cmake -S C:\Users\Michael\Documents\.Code\jbc -B C:\Users\Michael\Documents\.Code\jbc\cmake-build-debug
+-- Selecting Windows SDK version 10.0.22621.0 to target Windows 10.0.19044.
+-- Configuring done (0.1s)
+-- Generating done (0.1s)
+-- Build files have been written to: C:/Users/Michael/Documents/.Code/jbc/cmake-build-debug
+CMake 使用的 C 编译器 MSVC 与配置的工具链 MinGW 不兼容。 配置配置文件…
+CMake 使用的 C++ 编译器 MSVC 与配置的工具链 MinGW 不兼容。 配置配置文件…
