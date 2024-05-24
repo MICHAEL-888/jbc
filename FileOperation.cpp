@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by Michael on 24-4-29.
 //
 
@@ -15,15 +15,17 @@
 
 // 定义FileOperation类的calculateMD5方法
 std::string FileOperation::calculateMD5(const std::string &filePath) {
-    // 转换路径为宽字符，解决中文路径问题
+    // 转换路径为宽字符，解决中文路径问题，MSVC编译器不使用此段代码
+    /*
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, &filePath[0], (int)filePath.size(), NULL, 0);
     std::wstring wstr(size_needed, 0);
     MultiByteToWideChar(CP_UTF8, 0, &filePath[0], (int)filePath.size(), &wstr[0], size_needed);
+    */
 
     // 创建一个unsigned char数组，用于存储MD5哈希值
     unsigned char result[MD5_DIGEST_LENGTH];
     // 以二进制模式打开文件
-    std::ifstream file(wstr.c_str(), std::ios::binary);
+    std::ifstream file(filePath, std::ios::binary);
 
     if (!file) {
         // 文件打开失败，返回空字符串
