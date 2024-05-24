@@ -64,4 +64,6 @@ TestFile目录下Safe.txt为测试文件，Unsafe.txt为安全软件通用测试
 
 我真就不明白了为什么各个编译器不能统一标准？非要恶心人
 
+最后感谢Github Copilot老师帮助我解决90%以上的问题，学习了非常多
+
 ![图片](https://github.com/MICHAEL-888/jbc/assets/61051861/1e146949-c0db-4d19-a88e-9a365ce765d6)
