@@ -63,3 +63,19 @@ std::string FileOperation::calculateMD5(const std::string &filePath) {
     return {hex};
 }
 
+
+bool FileOperation::isPEFile(const std::string &filePath) {
+    std::ifstream file(filePath, std::ios::binary);
+    if (!file) {
+        std::cerr << "Failed to open file: " << filePath << std::endl;
+        return false;
+    }
+
+    char buffer[2];
+    if (!file.read(buffer, sizeof(buffer))) {
+        std::cerr << "Failed to read file: " << filePath << std::endl;
+        return false;
+    }
+
+    return buffer[0] == 'M' && buffer[1] == 'Z';
+}

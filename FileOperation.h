@@ -12,6 +12,7 @@ class FileOperation {
 public:
 
     static std::string calculateMD5(const std::string &filePath);
+    static bool isPEFile(const std::string& filePath);
 };
 
 
