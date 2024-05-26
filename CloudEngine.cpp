@@ -11,7 +11,7 @@
 //        Monthly quota 	15.5 K lookups / month
 
 
-#include "VirusTotal.h"
+#include "CloudEngine.h"
 #include <iostream>
 #include <string>
 #include<curl/curl.h>
@@ -26,7 +26,10 @@ size_t WriteCallback(void *contents, size_t size, size_t nmemb, std::string *use
     return totalSize;
 }
 
-std::string VirusTotal::GetFileReport(const std::string &fileHash) {
+CloudEngine::VT_FileReport CloudEngine::VT_GetFileReport(const std::string &fileHash) {
+
+    VT_FileReport fileReport;
+
     //初始化一个CURL句柄
     CURL *hnd = curl_easy_init();
 
@@ -35,9 +38,9 @@ std::string VirusTotal::GetFileReport(const std::string &fileHash) {
     //设置CURL句柄的选项，将接收到的数据写入到标准输出(stdout)。
     //curl_easy_setopt(hnd, CURLOPT_WRITEDATA, stdout);
     //将返回结果写入回调函数当中
-    std::string readBuffer;
+    //std::string readBuffer;
     curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, &readBuffer);
+    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, &fileReport.data);
     //这行代码设置了CURL句柄的选项，指定了请求的URL
     curl_easy_setopt(hnd, CURLOPT_URL, (std::string("https://www.virustotal.com/api/v3/files/") + fileHash).c_str());
 
@@ -51,11 +54,14 @@ std::string VirusTotal::GetFileReport(const std::string &fileHash) {
     //执行一个已经设置好选项的CURL操作，并将结果存储在ret变量中。如果操作成功，ret将等于CURLE_OK。
     CURLcode ret = curl_easy_perform(hnd);
 
+    curl_easy_getinfo(hnd, CURLINFO_RESPONSE_CODE, &fileReport.httpStatus);
+    //std::cout << fileReport.httpStatus << std::endl;
+    curl_easy_cleanup(hnd);
     if (ret != CURLE_OK) {
         std::cerr << "curl_easy_perform() failed:" << curl_easy_strerror(ret) << std::endl;
-        return "";
+        return fileReport;
     } else {
-        return readBuffer;
+        return fileReport;
     }
 }
 

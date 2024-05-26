@@ -3,7 +3,7 @@
 #include <filesystem>
 //使用Windows.h头文件后严禁使用using namespace std，宏常量产生冲突！
 #include <Windows.h>
-#include "VirusTotal.h"
+#include "CloudEngine.h"
 #include <nlohmann/json.hpp>
 //#include <bits/stdc++.h>
 
@@ -81,7 +81,7 @@ int main() {
                     ++dir;
                     continue;
                 }
-                if((*dir).file_size() > 512 * 1024 * 1024){
+                if ((*dir).file_size() > 512 * 1024 * 1024) {
                     ++dir;
                     continue;
                 }
@@ -101,10 +101,11 @@ int main() {
                 fileInfo.fileName = convertPath((*dir).path().filename().u8string());
                 //此处必须直接传string，u8string转一遍后不能正常使用
                 fileInfo.hash = FileOperation::calculateMD5((*dir).path().string());
-                fileInfo.ret = VirusTotal::GetFileReport(fileInfo.hash);
+                CloudEngine::VT_FileReport VT_ret;
+                VT_ret = CloudEngine::VT_GetFileReport(fileInfo.hash);
+                fileInfo.ret = VT_ret.data;
 
-                //此处为简单判断，后续会补充判断HTTP状态码
-                if (!fileInfo.ret.empty() && fileInfo.ret.find("error") == std::string::npos) {
+                if (VT_ret.httpStatus == 200) {
                     //解析JSON字符串，使用"[]"访问对象
                     nlohmann::json jsonObject = nlohmann::json::parse(fileInfo.ret);
                     //fileInfo.malicious = jsonObject["data"]["attributes"]["last_analysis_stats"]["malicious"];
@@ -115,25 +116,45 @@ int main() {
                     if (!jsonObject["data"]["attributes"]["last_analysis_results"]["Kaspersky"]["result"].is_null()) {
                         fileInfo.Kaspersky = jsonObject["data"]["attributes"]["last_analysis_results"]["Kaspersky"]["result"];
                     }
-                } else {
-                    while (fileInfo.ret.empty()) {
-                        std::cout << "查询出现错误，可能是APIKEY速率限制，等待10秒后重试" << std::endl;
+                } else if (VT_ret.httpStatus == 404) {
+
+                } else if (VT_ret.httpStatus == 429) {
+                    //此处为重试
+                    while (VT_ret.httpStatus == 429) {
+                        std::cout << "请求达到APIKEY速率限制，等待10秒后重试" << std::endl;
                         //Sleep为Windows API的一部分，std库中可使用std::this_thread::sleep_for()
                         Sleep(1000 * 10);
-                        fileInfo.ret = VirusTotal::GetFileReport(fileInfo.hash);
+                        VT_ret = CloudEngine::VT_GetFileReport(fileInfo.hash);
+                        fileInfo.ret = VT_ret.data;
 
-                        //解析JSON字符串，使用"[]"访问对象
-                        nlohmann::json jsonObject = nlohmann::json::parse(fileInfo.ret);
-                        //fileInfo.malicious = jsonObject["data"]["attributes"]["last_analysis_stats"]["malicious"];
-                        //需要判断json对象是否存在否则报错！！！
-                        if (!jsonObject["data"]["attributes"]["last_analysis_results"]["ESET-NOD32"].is_null()) {
-                            fileInfo.ESET = jsonObject["data"]["attributes"]["last_analysis_results"]["ESET-NOD32"]["result"];
-                        }
-                        if (!jsonObject["data"]["attributes"]["last_analysis_results"]["Kaspersky"].is_null()) {
-                            fileInfo.Kaspersky = jsonObject["data"]["attributes"]["last_analysis_results"]["Kaspersky"]["result"];
+                        if (VT_ret.httpStatus == 200) {
+                            //解析JSON字符串，使用"[]"访问对象
+                            nlohmann::json jsonObject = nlohmann::json::parse(fileInfo.ret);
+                            //fileInfo.malicious = jsonObject["data"]["attributes"]["last_analysis_stats"]["malicious"];
+                            //需要判断json对象是否存在否则报错！！！
+                            if (!jsonObject["data"]["attributes"]["last_analysis_results"]["ESET-NOD32"]["result"].is_null()) {
+                                fileInfo.ESET = jsonObject["data"]["attributes"]["last_analysis_results"]["ESET-NOD32"]["result"];
+                            }
+                            if (!jsonObject["data"]["attributes"]["last_analysis_results"]["Kaspersky"]["result"].is_null()) {
+                                fileInfo.Kaspersky = jsonObject["data"]["attributes"]["last_analysis_results"]["Kaspersky"]["result"];
+                            }
+                        } else if (VT_ret.httpStatus == 404) {
+
+                        } else if (VT_ret.httpStatus == 429) {
+                            continue;
+                        } else {
+                            std::cout << "VirusTotal接口异常，错误代码：" << VT_ret.httpStatus << std::endl;
                         }
                     }
+                } else {
+                    std::cout << "VirusTotal接口异常，错误代码：" << VT_ret.httpStatus << std::endl;
                 }
+//                //此处为简单判断，后续会补充判断HTTP状态码
+//                if (!fileInfo.ret.empty() && fileInfo.ret.find("error") == std::string::npos) {
+//
+//                } else {
+//
+//                }
 
                 if (!fileInfo.Kaspersky.empty()) {
                     //此处暂未过滤Hacktool报法，后续更新

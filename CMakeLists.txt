@@ -25,8 +25,8 @@ find_package(CURL REQUIRED)
 
 
 add_executable(jbc main.cpp
-        VirusTotal.cpp
-        VirusTotal.h
+        CloudEngine.cpp
+        CloudEngine.h
         FileOperation.cpp
         FileOperation.h
 )
