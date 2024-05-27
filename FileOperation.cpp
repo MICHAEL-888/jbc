@@ -12,6 +12,9 @@
 #include <openssl/md5.h>
 #include <windows.h>
 //#include <filesystem>
+#include <wincrypt.h>
+#include <wintrust.h>
+#include <Softpub.h>
 
 // 定义FileOperation类的calculateMD5方法
 std::string FileOperation::calculateMD5(const std::string &filePath) {
@@ -78,4 +81,52 @@ bool FileOperation::isPEFile(const std::string &filePath) {
     }
 
     return buffer[0] == 'M' && buffer[1] == 'Z';
+}
+
+bool FileOperation::VerifySignature(const std::wstring& filePath) {
+    //https://learn.microsoft.com/en-us/windows/win32/seccrypto/example-c-program--verifying-the-signature-of-a-pe-file
+
+    // 初始化WINTRUST_FILE_INFO结构体，用于指定要验证的文件
+    WINTRUST_FILE_INFO fileInfo;
+    memset(&fileInfo, 0, sizeof(fileInfo));
+    fileInfo.cbStruct = sizeof(WINTRUST_FILE_INFO);
+    fileInfo.pcwszFilePath = filePath.c_str();
+    fileInfo.hFile = NULL;
+    fileInfo.pgKnownSubject = NULL;
+
+    // 初始化WINTRUST_DATA结构体，用于指定验证的参数
+    //https://learn.microsoft.com/en-us/windows/win32/api/wintrust/ns-wintrust-wintrust_data
+    WINTRUST_DATA trustData;
+    memset(&trustData, 0, sizeof(trustData));
+    trustData.cbStruct = sizeof(WINTRUST_DATA);
+    trustData.pPolicyCallbackData = NULL;
+    trustData.pSIPClientData = NULL;
+    trustData.dwUIChoice = WTD_UI_NONE;
+    trustData.fdwRevocationChecks = WTD_REVOKE_WHOLECHAIN;
+    trustData.dwUnionChoice = WTD_CHOICE_FILE;
+    trustData.dwStateAction = WTD_STATEACTION_VERIFY;
+    trustData.hWVTStateData = NULL;
+    trustData.pwszURLReference = NULL;
+    trustData.dwProvFlags = WTD_REVOCATION_CHECK_CHAIN;
+    trustData.dwUIContext = 0;
+    trustData.pFile = &fileInfo;
+
+    // 指定要执行的操作，这里是验证文件的数字签名
+    GUID action = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+
+    // 调用WinVerifyTrust函数来验证文件的数字签名
+    LONG status = WinVerifyTrust(NULL, &action, &trustData);
+
+    // Any hWVTStateData must be released by a call with close.
+    //释放资源设置关闭标志后再次调用
+    trustData.dwStateAction = WTD_STATEACTION_CLOSE;
+    WinVerifyTrust(NULL, &action, &trustData);
+
+    if (status == ERROR_SUCCESS) {
+        // 如果WinVerifyTrust函数返回ERROR_SUCCESS，那么文件的数字签名是有效的
+        return true;
+    } else {
+        // 否则，文件的数字签名是无效的
+        return false;
+    }
 }

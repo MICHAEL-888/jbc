@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include "CloudEngine.h"
 #include <nlohmann/json.hpp>
+#include <fstream>
 //#include <bits/stdc++.h>
 
 //通过创建文件夹迭代器的方式判断程序有无权限访问，避免出错
@@ -24,6 +25,10 @@ std::string convertPath(const std::u8string &path) {
 }
 
 int main() {
+    std::ofstream fileStream("error.log");
+    // 将cerr的流缓冲区设置为文件流的流缓冲区
+    std::cerr.rdbuf(fileStream.rdbuf());
+
     //控制台编码默认936为GBK编码，代码文件采用65001 UTF-8编码
     //编码不同导致无法正确输出中文，此处设置控制台编码为UTF-8
     SetConsoleOutputCP(CP_UTF8);
@@ -85,6 +90,10 @@ int main() {
                     ++dir;
                     continue;
                 }
+                if(FileOperation::VerifySignature((*dir).path().wstring())){
+                    ++dir;
+                    continue;
+                }
 
                 struct FileInfo {
                     std::string path;
@@ -102,7 +111,7 @@ int main() {
                 //此处必须直接传string，u8string转一遍后不能正常使用
                 fileInfo.hash = FileOperation::calculateMD5((*dir).path().string());
                 CloudEngine::VT_FileReport VT_ret;
-                VT_ret = CloudEngine::VT_GetFileReport(fileInfo.hash);
+                //VT_ret = CloudEngine::VT_GetFileReport(fileInfo.hash);
                 fileInfo.ret = VT_ret.data;
 
                 if (VT_ret.httpStatus == 200) {
@@ -143,11 +152,11 @@ int main() {
                         } else if (VT_ret.httpStatus == 429) {
                             continue;
                         } else {
-                            std::cout << "VirusTotal接口异常，错误代码：" << VT_ret.httpStatus << std::endl;
+                            std::cerr << "VirusTotal接口异常，错误代码：" << VT_ret.httpStatus << std::endl;
                         }
                     }
                 } else {
-                    std::cout << "VirusTotal接口异常，错误代码：" << VT_ret.httpStatus << std::endl;
+                    std::cerr << "VirusTotal接口异常，错误代码：" << VT_ret.httpStatus << std::endl;
                 }
 //                //此处为简单判断，后续会补充判断HTTP状态码
 //                if (!fileInfo.ret.empty() && fileInfo.ret.find("error") == std::string::npos) {
@@ -183,12 +192,12 @@ int main() {
 
                 ++dir;
             } catch (const std::filesystem::filesystem_error &e) {
-                std::wcerr << "Filesystem error: " << e.what() << std::endl;
+                std::cerr << "Filesystem error: " << e.what() << std::endl;
                 return -1;
             }
         }
     } catch (const std::filesystem::filesystem_error &e) {
-        std::wcerr << "Filesystem error: " << e.what() << std::endl;
+        std::cerr << "Filesystem error: " << e.what() << std::endl;
         return -1;
     }
 

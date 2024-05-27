@@ -42,4 +42,6 @@ target_link_libraries(jbc OpenSSL::SSL OpenSSL::Crypto CURL::libcurl)
 find_package(nlohmann_json CONFIG REQUIRED)
 target_link_libraries(jbc nlohmann_json::nlohmann_json)
 
+target_link_libraries(jbc wintrust)
+
 #target_link_libraries(jbc sl)
