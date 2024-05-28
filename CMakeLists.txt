@@ -3,6 +3,8 @@ project(jbc)
 
 add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+
+
 set(CMAKE_CXX_STANDARD 20)
 
 #add_definitions(-DCURL_STATICLIB)
@@ -10,7 +12,8 @@ set(CMAKE_CXX_STANDARD 20)
 # 设置静态编译
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
 
-
+#务必放在add_executable之前,不然出错！！！
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # 优先查找静态库
 #set(CMAKE_FIND_LIBRARY_SUFFIXES ".a;.lib")
@@ -36,6 +39,8 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND "C:/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x86/mt.exe" -manifest "${CMAKE_SOURCE_DIR}/app.manifest" -outputresource:"$<TARGET_FILE:${PROJECT_NAME}>"\;\#1
         COMMENT "Adding custom manifest...")
 
+
+
 # 将OpenSSL库链接到jbc目标
 target_link_libraries(jbc OpenSSL::SSL OpenSSL::Crypto CURL::libcurl)
 
@@ -43,5 +48,8 @@ find_package(nlohmann_json CONFIG REQUIRED)
 target_link_libraries(jbc nlohmann_json::nlohmann_json)
 
 target_link_libraries(jbc wintrust)
+
+find_package(pugixml CONFIG REQUIRED)
+target_link_libraries(jbc pugixml::pugixml)
 
 #target_link_libraries(jbc sl)

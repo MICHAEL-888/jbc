@@ -22,6 +22,8 @@
 
 9、支持校验文件数字签名有效性
 
+10、接入360云查杀平台
+
 ### 未实现：
 
 1、可疑文件上传扫描
@@ -44,7 +46,7 @@
 
 10、加一个进度条
 
-11、接入360云查杀平台
+11、360云查批量校验
 
 12、多APIKEY负载均衡
 
@@ -56,11 +58,15 @@
 
 2、API导入表检测查杀
 
+——————————————
 
+### 待修复BUG:（lazy）
+
+1、输入不存在的盘符会导致程序崩溃
 
 ### 提示：
 
-构建程序前需安装OpenSSL库、CURL库、nlohmann库
+构建程序前需安装OpenSSL库、CURL库、nlohmann库、pugixml库
 
 请安装Windows SDK套件
 
@@ -84,4 +90,4 @@ TestFile目录下Safe.txt为测试文件，Unsafe.txt为安全软件通用测试
 
 最后感谢Github Copilot老师帮助我解决90%以上的问题，学习了非常多
 
-![图片](https://github.com/MICHAEL-888/jbc/assets/61051861/1e146949-c0db-4d19-a88e-9a365ce765d6)
+

@@ -282,6 +282,12 @@ jbc_IS_TOP_LEVEL:STATIC=ON
 //Value Computed by CMake
 jbc_SOURCE_DIR:STATIC=C:/Users/Michael/Documents/.Code/jbc
 
+//The directory containing a CMake configuration file for nlohmann_json.
+nlohmann_json_DIR:PATH=C:/Users/Michael/.vcpkg-clion/vcpkg/installed/x64-windows-static/share/nlohmann_json
+
+//The directory containing a CMake configuration file for pugixml.
+pugixml_DIR:PATH=C:/Users/Michael/.vcpkg-clion/vcpkg/installed/x64-windows-static/share/pugixml
+
 
 ########################
 # INTERNAL cache entries
@@ -427,6 +433,8 @@ CURL_LIBRARY_RELEASE:INTERNAL=C:/Users/Michael/.vcpkg-clion/vcpkg/installed/x64-
 FIND_PACKAGE_MESSAGE_DETAILS_OpenSSL:INTERNAL=[optimized;C:/Users/Michael/.vcpkg-clion/vcpkg/installed/x64-windows-static/lib/libcrypto.lib;debug;C:/Users/Michael/.vcpkg-clion/vcpkg/installed/x64-windows-static/debug/lib/libcrypto.lib][C:/Users/Michael/.vcpkg-clion/vcpkg/installed/x64-windows-static/include][c ][v3.3.0()]
 //Details about finding ZLIB
 FIND_PACKAGE_MESSAGE_DETAILS_ZLIB:INTERNAL=[optimized;C:/Users/Michael/.vcpkg-clion/vcpkg/installed/x64-windows-static/lib/zlib.lib;debug;C:/Users/Michael/.vcpkg-clion/vcpkg/installed/x64-windows-static/debug/lib/zlibd.lib][C:/Users/Michael/.vcpkg-clion/vcpkg/installed/x64-windows-static/include][c ][v1.3.1(1)]
+//Details about finding nlohmann_json
+FIND_PACKAGE_MESSAGE_DETAILS_nlohmann_json:INTERNAL=[C:/Users/Michael/.vcpkg-clion/vcpkg/installed/x64-windows-static/share/nlohmann_json/nlohmann_jsonConfig.cmake][v3.11.3()]
 //ADVANCED property for variable: OPENSSL_INCLUDE_DIR
 OPENSSL_INCLUDE_DIR-ADVANCED:INTERNAL=1
 //Install the dependencies listed in your manifest:

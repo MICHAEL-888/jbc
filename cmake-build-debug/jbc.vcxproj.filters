@@ -4,7 +4,7 @@
     <ClCompile Include="C:\Users\Michael\Documents\.Code\jbc\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Michael\Documents\.Code\jbc\VirusTotal.cpp">
+    <ClCompile Include="C:\Users\Michael\Documents\.Code\jbc\CloudEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Users\Michael\Documents\.Code\jbc\FileOperation.cpp">
@@ -12,7 +12,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="C:\Users\Michael\Documents\.Code\jbc\VirusTotal.h">
+    <ClInclude Include="C:\Users\Michael\Documents\.Code\jbc\CloudEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\Michael\Documents\.Code\jbc\FileOperation.h">
@@ -21,6 +21,9 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Users\Michael\Documents\.Code\jbc\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="C:\Users\Michael\.vcpkg-clion\vcpkg\installed\x64-windows-static\share\nlohmann_json\nlohmann_json.natvis" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

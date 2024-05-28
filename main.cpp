@@ -4,7 +4,8 @@
 //使用Windows.h头文件后严禁使用using namespace std，宏常量产生冲突！
 #include <Windows.h>
 #include "CloudEngine.h"
-#include <nlohmann/json.hpp>
+//#include <nlohmann/json.hpp>
+//#include <pugixml.hpp>
 #include <fstream>
 //#include <bits/stdc++.h>
 
@@ -90,7 +91,7 @@ int main() {
                     ++dir;
                     continue;
                 }
-                if(FileOperation::VerifySignature((*dir).path().wstring())){
+                if (FileOperation::VerifySignature((*dir).path().wstring())) {
                     ++dir;
                     continue;
                 }
@@ -99,93 +100,70 @@ int main() {
                     std::string path;
                     std::string fileName;
                     std::string hash;
-                    std::string ret;
-                    std::string ESET;
-                    std::string Kaspersky;
                     std::string threat_label;
-                    std::string malicious;  //暂时不需要用到
-                } fileInfo;
+                };
+
+                FileInfo fileInfo = {};
 
                 fileInfo.path = convertPath((*dir).path().u8string());
                 fileInfo.fileName = convertPath((*dir).path().filename().u8string());
                 //此处必须直接传string，u8string转一遍后不能正常使用
                 fileInfo.hash = FileOperation::calculateMD5((*dir).path().string());
-                CloudEngine::VT_FileReport VT_ret;
-                //VT_ret = CloudEngine::VT_GetFileReport(fileInfo.hash);
-                fileInfo.ret = VT_ret.data;
 
-                if (VT_ret.httpStatus == 200) {
-                    //解析JSON字符串，使用"[]"访问对象
-                    nlohmann::json jsonObject = nlohmann::json::parse(fileInfo.ret);
-                    //fileInfo.malicious = jsonObject["data"]["attributes"]["last_analysis_stats"]["malicious"];
-                    //需要判断json对象是否存在否则报错！！！
-                    if (!jsonObject["data"]["attributes"]["last_analysis_results"]["ESET-NOD32"]["result"].is_null()) {
-                        fileInfo.ESET = jsonObject["data"]["attributes"]["last_analysis_results"]["ESET-NOD32"]["result"];
-                    }
-                    if (!jsonObject["data"]["attributes"]["last_analysis_results"]["Kaspersky"]["result"].is_null()) {
-                        fileInfo.Kaspersky = jsonObject["data"]["attributes"]["last_analysis_results"]["Kaspersky"]["result"];
-                    }
-                } else if (VT_ret.httpStatus == 404) {
+                CloudEngine::QH_FileReport QH_ret;
+                QH_ret = CloudEngine::QH_GetFileReport(fileInfo.hash);
 
-                } else if (VT_ret.httpStatus == 429) {
-                    //此处为重试
-                    while (VT_ret.httpStatus == 429) {
-                        std::cout << "请求达到APIKEY速率限制，等待10秒后重试" << std::endl;
-                        //Sleep为Windows API的一部分，std库中可使用std::this_thread::sleep_for()
-                        Sleep(1000 * 10);
+                while (QH_ret.httpStatus != 200) {
+                    QH_ret = CloudEngine::QH_GetFileReport(fileInfo.hash);
+                }
+
+                if (QH_ret.attribute == 0) {
+                    fileInfo.threat_label = "Undetected";
+                } else if (QH_ret.attribute == 1) {
+                    fileInfo.threat_label = "Undetected";
+                    if (QH_ret.ages <= 3 && QH_ret.pop == 0) {
+                        CloudEngine::VT_FileReport VT_ret;
                         VT_ret = CloudEngine::VT_GetFileReport(fileInfo.hash);
-                        fileInfo.ret = VT_ret.data;
 
                         if (VT_ret.httpStatus == 200) {
-                            //解析JSON字符串，使用"[]"访问对象
-                            nlohmann::json jsonObject = nlohmann::json::parse(fileInfo.ret);
-                            //fileInfo.malicious = jsonObject["data"]["attributes"]["last_analysis_stats"]["malicious"];
-                            //需要判断json对象是否存在否则报错！！！
-                            if (!jsonObject["data"]["attributes"]["last_analysis_results"]["ESET-NOD32"]["result"].is_null()) {
-                                fileInfo.ESET = jsonObject["data"]["attributes"]["last_analysis_results"]["ESET-NOD32"]["result"];
-                            }
-                            if (!jsonObject["data"]["attributes"]["last_analysis_results"]["Kaspersky"]["result"].is_null()) {
-                                fileInfo.Kaspersky = jsonObject["data"]["attributes"]["last_analysis_results"]["Kaspersky"]["result"];
+                            if (VT_ret.attribute == 1) {
+                                fileInfo.threat_label = "Undetected";
+                            } else if (VT_ret.attribute == 2) {
+                                fileInfo.threat_label = VT_ret.threat_label;
                             }
                         } else if (VT_ret.httpStatus == 404) {
-
+                            //后续添加未知文件上传
                         } else if (VT_ret.httpStatus == 429) {
-                            continue;
+                            //此处为重试
+                            while (VT_ret.httpStatus == 429) {
+                                std::cout << "请求达到APIKEY速率限制，等待10秒后重试" << std::endl;
+                                //Sleep为Windows API的一部分，std库中可使用std::this_thread::sleep_for()
+                                Sleep(1000 * 10);
+                                VT_ret = CloudEngine::VT_GetFileReport(fileInfo.hash);
+
+                                if (VT_ret.httpStatus == 200) {
+                                    if (VT_ret.attribute == 1) {
+                                        fileInfo.threat_label = "Undetected";
+                                    } else if (VT_ret.attribute == 2) {
+                                        fileInfo.threat_label = VT_ret.threat_label;
+                                    }
+                                } else if (VT_ret.httpStatus == 404) {
+                                    //后续添加未知文件上传
+                                } else if (VT_ret.httpStatus == 429) {
+                                    continue;
+                                } else {
+                                    std::cerr << "VirusTotal接口异常，错误代码：" << VT_ret.httpStatus << std::endl;
+                                }
+                            }
                         } else {
                             std::cerr << "VirusTotal接口异常，错误代码：" << VT_ret.httpStatus << std::endl;
                         }
-                    }
-                } else {
-                    std::cerr << "VirusTotal接口异常，错误代码：" << VT_ret.httpStatus << std::endl;
-                }
-//                //此处为简单判断，后续会补充判断HTTP状态码
-//                if (!fileInfo.ret.empty() && fileInfo.ret.find("error") == std::string::npos) {
-//
-//                } else {
-//
-//                }
 
-                if (!fileInfo.Kaspersky.empty()) {
-                    //此处暂未过滤Hacktool报法，后续更新
-                    if (fileInfo.Kaspersky.find("not-a-virus") == std::string::npos &&
-                        fileInfo.Kaspersky.find("Packed") == std::string::npos &&
-                        fileInfo.Kaspersky.find("Keygen") == std::string::npos) {
-
-                        fileInfo.threat_label = fileInfo.Kaspersky;
                     }
-                } else if (!fileInfo.ESET.empty()) {
-                    //此处暂未过滤Hacktool报法，后续更新
-                    if (fileInfo.ESET.find("Packed") == std::string::npos &&
-                        fileInfo.ESET.find("Keygen") == std::string::npos &&
-                        fileInfo.ESET.find("FlyStudio") == std::string::npos &&
-                        fileInfo.ESET.find("BlackMoon") == std::string::npos) {
+                } else if (QH_ret.attribute == 2) {
+                    fileInfo.threat_label = QH_ret.threat_label;
+                }
 
-                        fileInfo.threat_label = fileInfo.ESET;
-                    }
-                }
-                if (fileInfo.threat_label.empty()) {
-                    fileInfo.threat_label = "Undetected";
-                }
                 std::cout << fileInfo.fileName << "    "
                           << fileInfo.threat_label << "    "
                           << fileInfo.hash << std::endl;
