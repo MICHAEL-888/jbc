@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include "FileOperation.h"
 #include <filesystem>
 //使用Windows.h头文件后严禁使用using namespace std，宏常量产生冲突！
@@ -52,28 +52,32 @@ int main() {
     getline(std::cin, Path);
     std::cout << "FileName    Result    Hash" << std::endl;
 
-    //再次设为UTF-8,要不然pause命令又乱码666
-    //SetConsoleOutputCP(CP_UTF8);
+    //string全部是GBK
+    SetConsoleOutputCP(936);
 
     //定义一个FileOperation对象
     //FileOperation fileOp;
 
     //同理，此处由于中文路径也需要特殊处理
-    if (!std::filesystem::exists(std::filesystem::path(std::u8string((char8_t *) Path.c_str())))) {
+    //std::cout << std::filesystem::path(Path) << std::endl;
+    //Path为GBK编码，自动处理
+    if (!std::filesystem::exists(std::filesystem::path(Path))) {
         std::cerr << "Path does not exist: " << Path << std::endl;
+        return -1;
     }
 
     try {
         //AI给出的解决方案
         //中文路径转宽字符传入filesystem
         std::filesystem::recursive_directory_iterator dir(
-                std::filesystem::path(std::u8string((char8_t *) Path.c_str())),
+                std::filesystem::path(std::filesystem::path(Path)),
                 std::filesystem::directory_options::skip_permission_denied), end;
 
         while (dir != end) {
 
             //此处判断文件夹是否有权限访问，避免迭代器出错
             if (std::filesystem::is_directory(*dir) && canAccess(*dir) == false) {
+                std::cerr << "Permission denied: " << (*dir).path().string() << std::endl;
                 dir.disable_recursion_pending();
             }
 
@@ -105,8 +109,8 @@ int main() {
 
                 FileInfo fileInfo = {};
 
-                fileInfo.path = convertPath((*dir).path().u8string());
-                fileInfo.fileName = convertPath((*dir).path().filename().u8string());
+                fileInfo.path = (*dir).path().string();
+                fileInfo.fileName = (*dir).path().filename().string();
                 //此处必须直接传string，u8string转一遍后不能正常使用
                 fileInfo.hash = FileOperation::calculateMD5((*dir).path().string());
 
