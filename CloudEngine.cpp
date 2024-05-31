@@ -143,9 +143,15 @@ CloudEngine::QH_FileReport CloudEngine::QH_GetFileReport(const std::string &file
 //    8a40d9eff408a78fe9ec10a0e7e60f62
 //    -------------------------------7d83e2d7a141e--
 
+
     QH_FileReport fileReport = {};
     std::string data;
     CURL *hnd = curl_easy_init();
+    //curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 0L);
+    //curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
+
+    //360忘记给这个域名上证书了，搞得我烦
+    //curl_easy_setopt(hnd, CURLOPT_CAINFO, "my-ca.pem");
     struct curl_httppost *formpost = NULL;
     struct curl_httppost *lastptr = NULL;
 
@@ -215,6 +221,8 @@ CloudEngine::QH_FileReport CloudEngine::QH_GetFileReport(const std::string &file
     curl_formfree(formpost);
     if (ret != CURLE_OK) {
         std::cerr << "360云查接口异常:" << curl_easy_strerror(ret) << std::endl;
+        fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                curl_easy_strerror(ret));
         return fileReport;
     } else {
         if (fileReport.httpStatus == 200) {

@@ -30,6 +30,7 @@ int main() {
     // 将cerr的流缓冲区设置为文件流的流缓冲区
     std::cerr.rdbuf(fileStream.rdbuf());
 
+    UINT BackupCP = GetConsoleOutputCP();
     //控制台编码默认936为GBK编码，代码文件采用65001 UTF-8编码
     //编码不同导致无法正确输出中文，此处设置控制台编码为UTF-8
     SetConsoleOutputCP(CP_UTF8);
@@ -53,7 +54,8 @@ int main() {
     std::cout << "FileName    Result    Hash" << std::endl;
 
     //string全部是GBK
-    SetConsoleOutputCP(936);
+    //SetConsoleOutputCP(936);
+    SetConsoleOutputCP(BackupCP);
 
     //定义一个FileOperation对象
     //FileOperation fileOp;

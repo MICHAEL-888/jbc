@@ -62,15 +62,11 @@
 
 ### 待修复BUG:（lazy）
 
-1、输入不存在的盘符会导致程序崩溃
-
-2、CURL SSL Connect Error
-
-3、证书吊销性检查可能导致扫描速度减慢
+1、证书吊销性检查可能导致扫描速度减慢
 
 ### 提示：
 
-构建程序前需安装OpenSSL库、CURL库、nlohmann库、pugixml库
+构建程序前需安装OpenSSL库、CURL库(with openssl)、nlohmann库、pugixml库
 
 请安装Windows SDK套件
 
