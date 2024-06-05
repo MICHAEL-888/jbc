@@ -9,6 +9,8 @@
 #include <fstream>
 //#include <bits/stdc++.h>
 
+std::filesystem::path PEM_path;
+
 //通过创建文件夹迭代器的方式判断程序有无权限访问，避免出错
 bool canAccess(const std::filesystem::path &p) {
     try {
@@ -21,14 +23,25 @@ bool canAccess(const std::filesystem::path &p) {
 
 std::string convertPath(const std::u8string &path) {
     return std::string(path.begin(), path.end());
+}
 
-
+void cleanup(){
+    std::remove(PEM_path.string().c_str());
 }
 
 int main() {
     std::ofstream fileStream("error.log");
     // 将cerr的流缓冲区设置为文件流的流缓冲区
     std::cerr.rdbuf(fileStream.rdbuf());
+
+    //注册退出回调
+    std::atexit(cleanup);
+
+    //写证书到TEMP目录
+    PEM_path = std::filesystem::temp_directory_path() / "PEM";
+    std::ofstream out(PEM_path);
+    out << PEM;
+    out.close();
 
     UINT BackupCP = GetConsoleOutputCP();
     //控制台编码默认936为GBK编码，代码文件采用65001 UTF-8编码

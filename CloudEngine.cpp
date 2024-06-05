@@ -18,7 +18,8 @@
 #include <nlohmann/json.hpp>
 #include <pugixml.hpp>
 //#define CURL_STATICLIB
-#define APIKEY "a7c30a1033f3351d685910312f5d4118bf2ad9deaedc9f77c6fb3666bca5d3df"
+
+extern std::filesystem::path PEM_path;
 
 size_t WriteCallback(void *contents, size_t size, size_t nmemb, std::string *userp) {
     //接收四个参数：一个指向数据的指针，数据项的大小，数据项的数量，以及一个用户定义的指针。
@@ -47,11 +48,13 @@ CloudEngine::VT_FileReport CloudEngine::VT_GetFileReport(const std::string &file
     curl_easy_setopt(hnd, CURLOPT_WRITEDATA, &data);
     //这行代码设置了CURL句柄的选项，指定了请求的URL
     curl_easy_setopt(hnd, CURLOPT_URL, (std::string("https://www.virustotal.com/api/v3/files/") + fileHash).c_str());
+    //openssl默认不使用系统CA存储进行证书校验，需要单独设置标志
+    curl_easy_setopt(hnd, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
 
     //这行代码定义了一个指向curl_slist结构的指针。curl_slist结构用于存储HTTP头。
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "accept: application/json");
-    headers = curl_slist_append(headers, (std::string("x-apikey: ") + APIKEY).c_str());
+    headers = curl_slist_append(headers, (std::string("x-apikey: ") + API_KEY).c_str());
     //这行代码设置了CURL句柄的选项，使其在发送请求时使用headers列表中的HTTP头。
     curl_easy_setopt(hnd, CURLOPT_HTTPHEADER, headers);
 
@@ -151,7 +154,8 @@ CloudEngine::QH_FileReport CloudEngine::QH_GetFileReport(const std::string &file
     //curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
 
     //360忘记给这个域名上证书了，搞得我烦
-    //curl_easy_setopt(hnd, CURLOPT_CAINFO, "my-ca.pem");
+    //总之先单独设置一下证书，360接口的证书一会儿有一会儿没有的
+    curl_easy_setopt(hnd, CURLOPT_CAINFO, PEM_path.string().c_str());
     struct curl_httppost *formpost = NULL;
     struct curl_httppost *lastptr = NULL;
 
@@ -221,8 +225,6 @@ CloudEngine::QH_FileReport CloudEngine::QH_GetFileReport(const std::string &file
     curl_formfree(formpost);
     if (ret != CURLE_OK) {
         std::cerr << "360云查接口异常:" << curl_easy_strerror(ret) << std::endl;
-        fprintf(stderr, "curl_easy_perform() failed: %s\n",
-                curl_easy_strerror(ret));
         return fileReport;
     } else {
         if (fileReport.httpStatus == 200) {
