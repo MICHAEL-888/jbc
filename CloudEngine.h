@@ -136,6 +136,10 @@ public:
         std::string threat_label;
         std::string malicious;  //暂时不需要用到
     };
+    struct VT_UploadFile{
+        int httpStatus;
+        std::string ret;
+    };
     struct QH_FileReport{
         int httpStatus;
         int attribute;  //0:safe    1:undetected    2:malware
@@ -145,6 +149,8 @@ public:
     };
 
     static VT_FileReport VT_GetFileReport(const std::string &fileHash);
+
+    static VT_UploadFile VT_UploadFileReport(const std::filesystem::path, const unsigned int binary_size);
 
     static QH_FileReport QH_GetFileReport(const std::string &fileHash);
 };

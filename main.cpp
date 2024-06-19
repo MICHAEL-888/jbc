@@ -8,8 +8,27 @@
 //#include <pugixml.hpp>
 #include <fstream>
 //#include <bits/stdc++.h>
+#include <thread>
+#include <chrono>
+#include <mutex>
 
 std::filesystem::path PEM_path;
+
+bool stopFlag = false;
+
+HANDLE hConsole;
+COORD currentCoord;
+
+
+//全局线程锁，避免控制台刷新线程与主线程冲突
+std::mutex coutMutex;
+
+struct scanStatus {
+    unsigned int total = 0;
+    unsigned int scanned = 0;
+    unsigned int threat = 0;
+};
+scanStatus scanStatus;
 
 //通过创建文件夹迭代器的方式判断程序有无权限访问，避免出错
 bool canAccess(const std::filesystem::path &p) {
@@ -25,8 +44,34 @@ std::string convertPath(const std::u8string &path) {
     return std::string(path.begin(), path.end());
 }
 
-void cleanup(){
+//退出程序回调函数
+void cleanup() {
     std::remove(PEM_path.string().c_str());
+}
+
+//定时器刷新当前扫描状态
+void timerTask() {
+    while (!stopFlag) {
+        coutMutex.lock();
+
+        COORD coord;
+        coord.X = 0;
+        coord.Y = 0;
+        SetConsoleCursorPosition(hConsole, coord);
+
+        std::cout << "Total: " << scanStatus.total
+                  << "    Scanned: " << scanStatus.scanned
+                  << "    Threat: " << scanStatus.threat << std::endl << std::endl
+                  << "FilePath    Threat    Hash" << std::endl << std::endl;
+
+        //线程冲突需要解决！！！
+        //输出后将光标移动到控制台末尾
+        SetConsoleCursorPosition(hConsole, currentCoord);
+
+        coutMutex.unlock();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
 }
 
 int main() {
@@ -56,7 +101,8 @@ int main() {
     //这行输出很奇妙，不好评价，导致我去找半天getline的BUG;
     std::cout << "1、请输入文件夹路径例如:\"D:\\Folder\"" << std::endl;
     std::cout << "2、根目录请以\"\\\"结尾" << std::endl;
-    std::cout << "3、仅扫描PE文件(exe,dll等)" << std::endl;
+    std::cout << "3、仅扫描PE文件(exe,dll等)" << std::endl << std::endl;
+    std::cout << "Please enter the path: ";
 
     //getline读入GBK输出也要GBK不然乱码
     //SetConsoleOutputCP(936);
@@ -64,7 +110,9 @@ int main() {
 
     std::string Path;
     getline(std::cin, Path);
-    std::cout << "FileName    Result    Hash" << std::endl;
+    system("cls");
+    std::cout << "Total: 0    Scanned: 0    Threat: 0" << std::endl << std::endl;
+    std::cout << "FilePath    Threat    Hash" << std::endl << std::endl;
 
     //string全部是GBK
     //SetConsoleOutputCP(936);
@@ -79,6 +127,17 @@ int main() {
     if (!std::filesystem::exists(std::filesystem::path(Path))) {
         std::cerr << "Path does not exist: " << Path << std::endl;
         return -1;
+    }
+
+    //获取控制台句柄
+    hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    //创建线程用于定时刷新扫描状态
+    std::thread refreshStatus(timerTask);
+
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if (GetConsoleScreenBufferInfo(hConsole, &csbi)) {
+        currentCoord = csbi.dwCursorPosition;
     }
 
     try {
@@ -102,6 +161,9 @@ int main() {
                     ++dir;
                     continue;
                 }
+
+                scanStatus.total++;
+
                 if (!FileOperation::isPEFile((*dir).path().string())) {
                     ++dir;
                     continue;
@@ -132,6 +194,7 @@ int main() {
                 CloudEngine::QH_FileReport QH_ret;
                 QH_ret = CloudEngine::QH_GetFileReport(fileInfo.hash);
 
+                //特殊网络抽风，循环到有结果为止
                 while (QH_ret.httpStatus != 200) {
                     QH_ret = CloudEngine::QH_GetFileReport(fileInfo.hash);
                 }
@@ -151,13 +214,15 @@ int main() {
                                 fileInfo.threat_label = VT_ret.threat_label;
                             }
                         } else if (VT_ret.httpStatus == 404) {
-                            //后续添加未知文件上传
+                            //未知文件上传检测，只传一次，失败不重试
+                            CloudEngine::VT_UploadFileReport((*dir).path(), (*dir).file_size());
                         } else if (VT_ret.httpStatus == 429) {
                             //此处为重试
                             while (VT_ret.httpStatus == 429) {
-                                std::cout << "请求达到APIKEY速率限制，等待10秒后重试" << std::endl;
+                                std::cerr << "请求达到APIKEY速率限制，等待10秒后重试" << std::endl;
                                 //Sleep为Windows API的一部分，std库中可使用std::this_thread::sleep_for()
-                                Sleep(1000 * 10);
+                                //Sleep(1000 * 10);
+                                std::this_thread::sleep_for(std::chrono::milliseconds(1000 * 10));
                                 VT_ret = CloudEngine::VT_GetFileReport(fileInfo.hash);
 
                                 if (VT_ret.httpStatus == 200) {
@@ -167,6 +232,8 @@ int main() {
                                         fileInfo.threat_label = VT_ret.threat_label;
                                     }
                                 } else if (VT_ret.httpStatus == 404) {
+                                    CloudEngine::VT_UploadFileReport((*dir).path(), (*dir).file_size());
+                                    break;
                                     //后续添加未知文件上传
                                 } else if (VT_ret.httpStatus == 429) {
                                     continue;
@@ -183,9 +250,25 @@ int main() {
                     fileInfo.threat_label = QH_ret.threat_label;
                 }
 
-                std::cout << fileInfo.fileName << "    "
-                          << fileInfo.threat_label << "    "
-                          << fileInfo.hash << std::endl;
+                scanStatus.scanned++;
+
+                //加锁避免冲突
+                coutMutex.lock();
+
+                if (fileInfo.threat_label != "Undetected") {
+                    scanStatus.threat++;
+                    std::cout << fileInfo.fileName << "    "
+                              << fileInfo.threat_label << "    "
+                              << fileInfo.hash << std::endl;
+
+                    //此处存储控制台光标位置，防止内容覆写
+                    if (GetConsoleScreenBufferInfo(hConsole, &csbi)) {
+                        currentCoord = csbi.dwCursorPosition;
+                    }
+                }
+
+                coutMutex.unlock();
+
 
                 ++dir;
             } catch (const std::filesystem::filesystem_error &e) {
@@ -198,8 +281,17 @@ int main() {
         return -1;
     }
 
+    //此处等待控制台刷新线程
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    stopFlag = true;
+
+    refreshStatus.join();
+
+    std::cout << std::endl;
 
     system("pause");
+
     return 0;
 
 }

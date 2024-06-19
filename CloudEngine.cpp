@@ -17,16 +17,63 @@
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
 #include <pugixml.hpp>
+#include <openssl/evp.h>
+#include <fstream>
+#include <vector>
 //#define CURL_STATICLIB
 
 extern std::filesystem::path PEM_path;
 
 size_t WriteCallback(void *contents, size_t size, size_t nmemb, std::string *userp) {
     //接收四个参数：一个指向数据的指针，数据项的大小，数据项的数量，以及一个用户定义的指针。
+    //用户定义指针由这行代码确定curl_easy_setopt(hnd, CURLOPT_WRITEDATA, &data);
     //这个函数应该返回处理的数据的总字节数（即size * nmemb）
     size_t totalSize = size * nmemb;
     userp->append((char *) contents, totalSize);
     return totalSize;
+}
+
+std::string Base64Encode(const std::string &filePath, const unsigned int binary_size) {
+    //传入路径 及 文件大小
+
+    // 创建一个编码上下文对象
+    EVP_ENCODE_CTX *ectx = EVP_ENCODE_CTX_new();
+    // 初始化Base64编码过程
+    EVP_EncodeInit(ectx);
+
+    // 此处仿照md5计算方法采取文件流读入形式
+    // 以二进制模式打开文件
+    std::ifstream file(filePath, std::ios::binary);
+    if (!file) {
+        // 文件打开失败，返回空字符串
+        return "";
+    }
+
+    // 计算编码后的长度，Base64编码规则是每3个字节编码为4个字符
+    int out_length1 = (binary_size + 2) / 3 * 4;
+    int out_length2, out_length3 = 0;
+
+    // 创建一个缓冲区，用于读取文件
+    char buf[1024 * 16];
+    // 创建输出缓冲区，base64编码大33%，避免溢出设置2倍，+1为AI建议
+    std::vector<unsigned char> out(out_length1 * 2 + 1);
+    // 循环读取文件，直到文件结束
+    while (file.good()) {
+        // 从文件中读取数据到缓冲区
+        file.read(buf, sizeof(buf));
+        // 更新MD5哈希值
+        EVP_EncodeUpdate(ectx, out.data(), &out_length2, reinterpret_cast<unsigned char *>(buf), file.gcount());
+        out_length3 += out_length2;
+    }
+
+    EVP_EncodeFinal(ectx, out.data() + out_length3, &out_length2);
+
+    // 释放编码上下文对象
+    EVP_ENCODE_CTX_free(ectx);
+
+    // 将编码后的二进制数据转换为字符串并返回
+    return std::string(reinterpret_cast<char *>(out.data()));
+
 }
 
 CloudEngine::VT_FileReport CloudEngine::VT_GetFileReport(const std::string &fileHash) {
@@ -106,6 +153,73 @@ CloudEngine::VT_FileReport CloudEngine::VT_GetFileReport(const std::string &file
             }
         }
         return fileReport;
+    }
+}
+
+CloudEngine::VT_UploadFile CloudEngine::VT_UploadFileReport(const std::filesystem::path filePath, const unsigned int binary_size) {
+    VT_UploadFile uploadFile = {};
+    std::string data;
+    CURL *hnd = curl_easy_init();
+    struct curl_httppost *formpost = NULL;
+    struct curl_httppost *lastptr = NULL;
+
+    curl_easy_setopt(hnd, CURLOPT_CUSTOMREQUEST, "POST");
+    curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, &data);
+    struct curl_slist *headers = NULL;
+    headers = curl_slist_append(headers, "accept: application/json");
+    headers = curl_slist_append(headers, "content-type: multipart/form-data");
+    headers = curl_slist_append(headers, (std::string("x-apikey: ") + API_KEY).c_str());
+    curl_easy_setopt(hnd, CURLOPT_HTTPHEADER, headers);
+    curl_easy_getinfo(hnd, CURLINFO_RESPONSE_CODE, &uploadFile.httpStatus);
+
+    std::string contentType = "data:application/x-msdownload;name=" + filePath.filename().string() + ";base64," + Base64Encode(filePath.string(), file_size(filePath));
+
+    std::ifstream file(filePath, std::ios::binary);
+    if (!file) {
+        // 文件打开失败，返回空字符串
+        return uploadFile;
+    }
+
+    std::vector<unsigned char> buf(binary_size);
+    file.read(reinterpret_cast<char *>(buf.data()), binary_size);
+
+
+    //CURL对中文字符处理存在问题，此处传递utf-8编码字符
+    curl_formadd(&formpost,
+                 &lastptr,
+                 CURLFORM_COPYNAME, "file",
+                 CURLFORM_BUFFER, filePath.filename().u8string().c_str(),
+                 CURLFORM_BUFFERPTR, buf.data(),
+                 CURLFORM_BUFFERLENGTH, binary_size,
+                 CURLFORM_END);
+
+//    std::cerr << filePath.string().c_str() << std::endl;
+//    std::cerr << "_____" << std::endl;
+
+    //openssl默认不使用系统CA存储进行证书校验，需要单独设置标志
+    curl_easy_setopt(hnd, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
+    curl_easy_setopt(hnd, CURLOPT_URL, "https://www.virustotal.com/api/v3/files");
+    curl_easy_setopt(hnd, CURLOPT_HTTPPOST, formpost);
+
+    CURLcode ret = curl_easy_perform(hnd);
+    curl_easy_getinfo(hnd, CURLINFO_RESPONSE_CODE, &uploadFile.httpStatus);
+
+    curl_easy_cleanup(hnd);
+    curl_formfree(formpost);
+    if (ret != CURLE_OK) {
+        std::cerr << "VT文件上传异常:" << curl_easy_strerror(ret) << std::endl;
+        return uploadFile;
+    } else {
+        if (uploadFile.httpStatus == 200) {
+            nlohmann::json jsonObject = nlohmann::json::parse(data);
+            if (!jsonObject["data"]["id"].is_null()) {
+                uploadFile.ret = jsonObject["data"]["id"];
+            }
+        }
+        //此处获取到id后可通过api查询文件扫描状态，目前没有必要，浪费api次数
+//        std::cerr << data << std::endl;
+        return uploadFile;
     }
 }
 
@@ -257,5 +371,7 @@ CloudEngine::QH_FileReport CloudEngine::QH_GetFileReport(const std::string &file
         return fileReport;
     }
 }
+
+
 
 

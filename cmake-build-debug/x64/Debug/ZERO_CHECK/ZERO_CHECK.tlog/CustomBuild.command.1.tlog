@@ -1,0 +1,10 @@
+^C:\USERS\MICHAEL\DOCUMENTS\.CODE\JBC\CMAKE-BUILD-DEBUG\CMAKEFILES\358173E1ABFBEE15C9852B29C84D16BB\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\JetBrains\CLion 2024.1\bin\cmake\win\x64\bin\cmake.exe" -SC:/Users/Michael/Documents/.Code/jbc -BC:/Users/Michael/Documents/.Code/jbc/cmake-build-debug --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/Michael/Documents/.Code/jbc/cmake-build-debug/jbc.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

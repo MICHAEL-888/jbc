@@ -42,7 +42,6 @@ std::string FileOperation::calculateMD5(const std::string &filePath) {
 
     // 创建一个缓冲区，用于读取文件
     char buf[1024 * 16];
-    //char buf[1024 * 16 * ];
     // 循环读取文件，直到文件结束
     while (file.good()) {
         // 从文件中读取数据到缓冲区
