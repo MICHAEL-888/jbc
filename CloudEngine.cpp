@@ -267,6 +267,8 @@ CloudEngine::QH_FileReport CloudEngine::QH_GetFileReport(const std::string &file
     //curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 0L);
     //curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
 
+//    //openssl默认不使用系统CA存储进行证书校验，需要单独设置标志
+//    curl_easy_setopt(hnd, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
     //360忘记给这个域名上证书了，搞得我烦
     //总之先单独设置一下证书，360接口的证书一会儿有一会儿没有的
     curl_easy_setopt(hnd, CURLOPT_CAINFO, PEM_path.string().c_str());
