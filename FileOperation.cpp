@@ -106,7 +106,7 @@ bool FileOperation::VerifySignature(const std::wstring& filePath) {
     trustData.dwStateAction = WTD_STATEACTION_VERIFY;
     trustData.hWVTStateData = NULL;
     trustData.pwszURLReference = NULL;
-    trustData.dwProvFlags = WTD_REVOCATION_CHECK_CHAIN;
+    trustData.dwProvFlags = WTD_REVOCATION_CHECK_CHAIN | WTD_CACHE_ONLY_URL_RETRIEVAL;
     trustData.dwUIContext = 0;
     trustData.pFile = &fileInfo;
 
