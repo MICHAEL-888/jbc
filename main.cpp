@@ -226,6 +226,7 @@ void fileTraverse(const std::string &Path) {
                 queueMutex.lock();
                 fileQueue.push(tmp);
                 queueMutex.unlock();
+                
 
 
                 ++dir;
