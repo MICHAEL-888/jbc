@@ -1,4 +1,4 @@
-﻿//
+//
 // Created by Michael on 24-4-29.
 //
 
@@ -6,13 +6,14 @@
 #define JBC_FILEOPERATION_H
 
 //#include <bits/stdc++.h>
+#include <filesystem>
 
 class FileOperation {
 
 public:
 
-    static std::string calculateMD5(const std::string &filePath);
-    static bool isPEFile(const std::string& filePath);
+    static std::string calculateMD5(const std::filesystem::path& filePath);
+    static bool isPEFile(const std::filesystem::path& filePath);
     static bool VerifySignature(const std::wstring& filePath);
 };
 

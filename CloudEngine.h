@@ -150,7 +150,7 @@ public:
 
     static VT_FileReport VT_GetFileReport(const std::string &fileHash);
 
-    static VT_UploadFile VT_UploadFileReport(const std::filesystem::path, const unsigned int binary_size);
+    static VT_UploadFile VT_UploadFileReport(const std::filesystem::path& filePath, size_t binary_size);
 
     static QH_FileReport QH_GetFileReport(const std::string &fileHash);
 };

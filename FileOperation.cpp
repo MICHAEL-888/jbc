@@ -3,6 +3,7 @@
 //
 
 //#include <bits/stdc++.h>
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -17,7 +18,7 @@
 #include <Softpub.h>
 
 // 定义FileOperation类的calculateMD5方法
-std::string FileOperation::calculateMD5(const std::string &filePath) {
+std::string FileOperation::calculateMD5(const std::filesystem::path& filePath) {
     // 转换路径为宽字符，解决中文路径问题，MSVC编译器不使用此段代码
     /*
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, &filePath[0], (int)filePath.size(), NULL, 0);
@@ -65,17 +66,16 @@ std::string FileOperation::calculateMD5(const std::string &filePath) {
     return {hex};
 }
 
-
-bool FileOperation::isPEFile(const std::string &filePath) {
+bool FileOperation::isPEFile(const std::filesystem::path& filePath) {
     std::ifstream file(filePath, std::ios::binary);
     if (!file) {
-        std::cerr << "Failed to open file: " << filePath << std::endl;
+        std::cerr << "Failed to open file: " << filePath.string() << std::endl;
         return false;
     }
 
     char buffer[2];
     if (!file.read(buffer, sizeof(buffer))) {
-        std::cerr << "Failed to read file: " << filePath << std::endl;
+        std::cerr << "Failed to read file: " << filePath.string() << std::endl;
         return false;
     }
 

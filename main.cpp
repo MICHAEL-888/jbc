@@ -33,8 +33,8 @@ struct scanStatus {
 scanStatus scanStatus;
 
 struct FileInfo {
-    std::string path;
-    std::string fileName;
+    std::filesystem::path path;
+    std::filesystem::path fileName;
     std::string hash;
     std::string threat_label;
 };
@@ -63,12 +63,13 @@ int main() {
     out << PEM;
     out.close();
 
-    UINT BackupCP = GetConsoleOutputCP();
+    //UINT BackupCP = GetConsoleOutputCP();
     //控制台编码默认936为GBK编码，代码文件采用65001 UTF-8编码
     //编码不同导致无法正确输出中文，此处设置控制台编码为UTF-8
     SetConsoleOutputCP(CP_UTF8);
     //设置控制台输入编码为UTF-8，getline耍大牌单字节读入，设置UTF-8会出错
     //SetConsoleCP(CP_UTF8);
+    //setlocale(LC_ALL, "zh_CN.UTF-8");
 
     std::cout << "***Created by Michael***" << std::endl << std::endl;
     std::cout << "使用提示：" << std::endl;
@@ -83,6 +84,7 @@ int main() {
     //SetConsoleOutputCP(936);
     //SetConsoleCP(936);
 
+    //std::wcin.imbue(std::locale("zh_CN.UTF-8"));
     std::string Path;
     getline(std::cin, Path);
     system("cls");
@@ -91,7 +93,7 @@ int main() {
 
     //string全部是GBK
     //SetConsoleOutputCP(936);
-    SetConsoleOutputCP(BackupCP);
+    //SetConsoleOutputCP(BackupCP);
 
     //定义一个FileOperation对象
     //FileOperation fileOp;
@@ -206,7 +208,7 @@ void fileTraverse(const std::string &Path) {
 
                 scanStatus.total++;
 
-                if (!FileOperation::isPEFile((*dir).path().string())) {
+                if (!FileOperation::isPEFile(*dir)) {
                     ++dir;
                     continue;
                 }
@@ -221,12 +223,11 @@ void fileTraverse(const std::string &Path) {
 
                 std::pair<std::filesystem::path, std::string> tmp;
                 tmp.first = (*dir).path();
-                tmp.second = FileOperation::calculateMD5((*dir).path().string());
+                tmp.second = FileOperation::calculateMD5(*dir);
                 //记得上锁
                 queueMutex.lock();
                 fileQueue.push(tmp);
                 queueMutex.unlock();
-                
 
 
                 ++dir;
@@ -255,8 +256,8 @@ void cloudScan() {
             fileQueue.pop();
             queueMutex.unlock();
 
-            fileInfo.path = dir.string();
-            fileInfo.fileName = dir.filename().string();
+            fileInfo.path = dir;
+            fileInfo.fileName = dir.filename();
 
             CloudEngine::QH_FileReport QH_ret;
             QH_ret = CloudEngine::QH_GetFileReport(fileInfo.hash);
@@ -282,7 +283,7 @@ void cloudScan() {
                         }
                     } else if (VT_ret.httpStatus == 404) {
                         //未知文件上传检测，只传一次，失败不重试
-                        CloudEngine::VT_UploadFileReport(dir, file_size(dir));
+                        CloudEngine::VT_UploadFileReport(dir, std::filesystem::file_size(dir));
                     } else if (VT_ret.httpStatus == 429) {
                         //此处为重试
                         while (VT_ret.httpStatus == 429) {
@@ -324,9 +325,13 @@ void cloudScan() {
 
             if (fileInfo.threat_label != "Undetected") {
                 scanStatus.threat++;
-                std::cout << fileInfo.path << "    "
+                //SetConsoleOutputCP(CP_UTF8);
+                std::wcout.imbue(std::locale("zh_CN.UTF-8"));
+                std::wcout << fileInfo.path.wstring();
+                std::cout << "    "
                           << fileInfo.threat_label << "    "
                           << fileInfo.hash << std::endl;
+                //std::wcout << wss.str();
 
                 //此处存储控制台光标位置，防止内容覆写
                 if (GetConsoleScreenBufferInfo(hConsole, &csbi)) {

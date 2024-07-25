@@ -33,7 +33,7 @@ size_t WriteCallback(void *contents, size_t size, size_t nmemb, std::string *use
     return totalSize;
 }
 
-std::string Base64Encode(const std::string &filePath, const unsigned int binary_size) {
+std::string Base64Encode(const std::filesystem::path &filePath, size_t binary_size) {
     //传入路径 及 文件大小
 
     // 创建一个编码上下文对象
@@ -73,6 +73,7 @@ std::string Base64Encode(const std::string &filePath, const unsigned int binary_
 
     // 将编码后的二进制数据转换为字符串并返回
     return std::string(reinterpret_cast<char *>(out.data()));
+
 
 }
 
@@ -156,7 +157,7 @@ CloudEngine::VT_FileReport CloudEngine::VT_GetFileReport(const std::string &file
     }
 }
 
-CloudEngine::VT_UploadFile CloudEngine::VT_UploadFileReport(const std::filesystem::path filePath, const unsigned int binary_size) {
+CloudEngine::VT_UploadFile CloudEngine::VT_UploadFileReport(const std::filesystem::path &filePath, size_t binary_size) {
     VT_UploadFile uploadFile = {};
     std::string data;
     CURL *hnd = curl_easy_init();
@@ -173,7 +174,12 @@ CloudEngine::VT_UploadFile CloudEngine::VT_UploadFileReport(const std::filesyste
     curl_easy_setopt(hnd, CURLOPT_HTTPHEADER, headers);
     curl_easy_getinfo(hnd, CURLINFO_RESPONSE_CODE, &uploadFile.httpStatus);
 
-    std::string contentType = "data:application/x-msdownload;name=" + filePath.filename().string() + ";base64," + Base64Encode(filePath.string(), file_size(filePath));
+    //此处无法判断文件名是否合法，不能使用文件名作为上传文件名filePath.filename().string()
+    std::wstring contentType = L"data:application/x-msdownload;name=";
+    contentType.append(filePath.filename());
+    contentType.append(L";base64,");
+    std::string base64 = Base64Encode(filePath, std::filesystem::file_size(filePath));
+    contentType.append(base64.begin(), base64.end());
 
     std::ifstream file(filePath, std::ios::binary);
     if (!file) {
