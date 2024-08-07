@@ -202,7 +202,7 @@ void fileTraverse(const std::string &Path) {
             if (std::filesystem::is_directory(*dir) && canAccess(*dir) == false) {
                 std::cerr << "Permission denied: " << (*dir).path().string() << std::endl;
                 dir.disable_recursion_pending();
-                continue;
+                //continue;
             }
 
             try {
