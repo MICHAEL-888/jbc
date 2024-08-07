@@ -229,7 +229,7 @@ CloudEngine::VT_UploadFile CloudEngine::VT_UploadFileReport(const std::filesyste
     }
 }
 
-CloudEngine::QH_FileReport CloudEngine::QH_GetFileReport(const std::string &fileHash) {
+CloudEngine::vec_QH_FileReport CloudEngine::QH_GetFileReport(const std::vector<std::string> &fileHashes) {
 
 //    -------------------------------7d83e2d7a141e
 //    Content-Disposition: form-data; name="md5s"
@@ -267,11 +267,11 @@ CloudEngine::QH_FileReport CloudEngine::QH_GetFileReport(const std::string &file
 //    -------------------------------7d83e2d7a141e--
 
 
-    QH_FileReport fileReport = {};
+    CloudEngine::vec_QH_FileReport vec_fileReport;
     std::string data;
     CURL *hnd = curl_easy_init();
-    //curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 0L);
-    //curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
+    curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
 
 //    //openssl默认不使用系统CA存储进行证书校验，需要单独设置标志
 //    curl_easy_setopt(hnd, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
@@ -287,12 +287,17 @@ CloudEngine::QH_FileReport CloudEngine::QH_GetFileReport(const std::string &file
     struct curl_slist *headers = NULL;
     //headers = curl_slist_append(headers, "accept: application/json");
     curl_easy_setopt(hnd, CURLOPT_HTTPHEADER, headers);
-    curl_easy_getinfo(hnd, CURLINFO_RESPONSE_CODE, &fileReport.httpStatus);
+    curl_easy_getinfo(hnd, CURLINFO_RESPONSE_CODE, &vec_fileReport.httpStatus);
 
+    std::string content;
+    for (const auto &fileHash: fileHashes) {
+        content += fileHash + "\t\t10485760 (风险)regqq.exe\n";
+
+    }
     curl_formadd(&formpost,
                  &lastptr,
                  CURLFORM_COPYNAME, "md5s",
-                 CURLFORM_COPYCONTENTS, (fileHash + std::string("		10485760 (风险)regqq.exe")).c_str(),
+                 CURLFORM_COPYCONTENTS, content.c_str(),
                  CURLFORM_END);
 
     curl_formadd(&formpost,
@@ -341,31 +346,39 @@ CloudEngine::QH_FileReport CloudEngine::QH_GetFileReport(const std::string &file
     curl_easy_setopt(hnd, CURLOPT_HTTPPOST, formpost);
 
     CURLcode ret = curl_easy_perform(hnd);
-    curl_easy_getinfo(hnd, CURLINFO_RESPONSE_CODE, &fileReport.httpStatus);
+    curl_easy_getinfo(hnd, CURLINFO_RESPONSE_CODE, &vec_fileReport.httpStatus);
 
     curl_easy_cleanup(hnd);
     curl_formfree(formpost);
     if (ret != CURLE_OK) {
         std::cerr << "360云查接口异常:" << curl_easy_strerror(ret) << std::endl;
-        return fileReport;
+        return vec_fileReport;
     } else {
-        if (fileReport.httpStatus == 200) {
+        if (vec_fileReport.httpStatus == 200) {
             std::string xml = data;
 
             pugi::xml_document doc;
             pugi::xml_parse_result result = doc.load_string(xml.c_str());
 
             if (result) {
-                fileReport.pop = std::stoi(doc.child("ret").child("softs").child("soft").child_value("pop"));
-                fileReport.ages = std::stoi(doc.child("ret").child("softs").child("soft").child_value("age"));
-                float e_level = std::stof(doc.child("ret").child("softs").child("soft").child_value("e_level"));
-                if (e_level <= 20) {
-                    fileReport.attribute = 0;
-                } else if (e_level > 20 && e_level < 50) {
-                    fileReport.attribute = 1;
-                } else if (e_level >= 50) {
-                    fileReport.attribute = 2;
-                    fileReport.threat_label = doc.child("ret").child("softs").child("soft").child_value("malware");
+                //std::vector<CloudEngine::QH_FileReport> vec_fileReport;
+                pugi::xml_node softs = doc.child("ret").child("softs");
+                for (pugi::xml_node soft = softs.child("soft"); soft; soft = soft.next_sibling("soft")) {
+                    CloudEngine::QH_FileReport qhFileReport;
+                    qhFileReport.pop = std::stoi(soft.child_value("pop"));
+                    qhFileReport.ages = std::stoi(soft.child_value("age"));
+                    qhFileReport.fileHash = soft.child_value("md5");
+                    float e_level = std::stof(soft.child_value("e_level"));
+                    if (e_level <= 20) {
+                        qhFileReport.attribute = 0;
+                    } else if (e_level > 20 && e_level < 50) {
+                        qhFileReport.attribute = 1;
+                    } else if (e_level >= 50) {
+                        qhFileReport.attribute = 2;
+                        qhFileReport.threat_label = soft.child_value("malware");
+                    }
+
+                    vec_fileReport.fileReport.push_back(qhFileReport);
                 }
 
             } else {
@@ -376,7 +389,7 @@ CloudEngine::QH_FileReport CloudEngine::QH_GetFileReport(const std::string &file
                           << "]\n\n";
             }
         }
-        return fileReport;
+        return vec_fileReport;
     }
 }
 

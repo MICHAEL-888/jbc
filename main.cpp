@@ -122,6 +122,7 @@ int main() {
     fileThread.detach();
     cloudThread.join();
 
+    std::cout << std::endl;
     system("pause");
 
     return 0;
@@ -193,10 +194,15 @@ void fileTraverse(const std::string &Path) {
 
         while (dir != end(dir)) {
 
-            //此处判断文件夹是否有权限访问，避免迭代器出错
+            if ((*dir).path().string().find("\\AppData\\Local\\Microsoft\\WindowsApps") != std::string::npos) {
+                ++dir;
+                std::cerr << "pass:" << (*dir).path().string() << std::endl;
+                continue;
+            }
             if (std::filesystem::is_directory(*dir) && canAccess(*dir) == false) {
                 std::cerr << "Permission denied: " << (*dir).path().string() << std::endl;
                 dir.disable_recursion_pending();
+                continue;
             }
 
             try {
@@ -216,10 +222,11 @@ void fileTraverse(const std::string &Path) {
                     ++dir;
                     continue;
                 }
-                if (FileOperation::VerifySignature((*dir).path().wstring())) {
-                    ++dir;
-                    continue;
-                }
+//                if (FileOperation::VerifySignature(*dir)) {
+//                    ++dir;
+//                    continue;
+//                }
+
 
                 std::pair<std::filesystem::path, std::string> tmp;
                 tmp.first = (*dir).path();
@@ -232,12 +239,14 @@ void fileTraverse(const std::string &Path) {
 
                 ++dir;
             } catch (const std::filesystem::filesystem_error &e) {
-                std::cerr << "Filesystem error: " << e.what() << std::endl;
+                std::cerr << "Filesystem1 error: " << e.what() << std::endl;
+                //++dir;
                 return;
             }
         }
     } catch (const std::filesystem::filesystem_error &e) {
-        std::cerr << "Filesystem error: " << e.what() << std::endl;
+        std::cerr << "Filesystem2 error: " << e.what() << std::endl;
+
         return;
     }
     fileStopFlag = true;
@@ -247,95 +256,109 @@ void cloudScan() {
     while (!fileStopFlag || !fileQueue.empty()) {
         //防止队列为空时线程空转
         if (!fileQueue.empty()) {
-            FileInfo fileInfo = {};
 
-            queueMutex.lock();
-            std::filesystem::path dir;
-            dir = fileQueue.front().first;
-            fileInfo.hash = fileQueue.front().second;
-            fileQueue.pop();
-            queueMutex.unlock();
 
-            fileInfo.path = dir;
-            fileInfo.fileName = dir.filename();
+            std::vector<std::string> vec_hash;
+            std::unordered_map<std::string, FileInfo> map_fileInfo;
+            while (!fileQueue.empty() && vec_hash.size() <= 250) {
+                queueMutex.lock();
+                FileInfo fileInfo = {};
+                std::filesystem::path dir;
+                dir = fileQueue.front().first;
+                fileInfo.hash = fileQueue.front().second;
+                vec_hash.push_back(fileInfo.hash);
+                fileQueue.pop();
+                queueMutex.unlock();
+                fileInfo.path = dir;
+                fileInfo.fileName = dir.filename();
+                map_fileInfo[fileInfo.hash] = fileInfo;
 
-            CloudEngine::QH_FileReport QH_ret;
-            QH_ret = CloudEngine::QH_GetFileReport(fileInfo.hash);
+            }
+
+            CloudEngine::vec_QH_FileReport vec_QH_ret;
+            vec_QH_ret = CloudEngine::QH_GetFileReport(vec_hash);
 
             //特殊网络抽风，循环到有结果为止
-            while (QH_ret.httpStatus != 200) {
-                QH_ret = CloudEngine::QH_GetFileReport(fileInfo.hash);
+            while (vec_QH_ret.httpStatus != 200) {
+                vec_QH_ret = CloudEngine::QH_GetFileReport(vec_hash);
             }
 
-            if (QH_ret.attribute == 0) {
-                fileInfo.threat_label = "Undetected";
-            } else if (QH_ret.attribute == 1) {
-                fileInfo.threat_label = "Undetected";
-                if (QH_ret.ages <= 3 && QH_ret.pop == 0) {
-                    CloudEngine::VT_FileReport VT_ret;
-                    VT_ret = CloudEngine::VT_GetFileReport(fileInfo.hash);
+            for (auto &ptr: vec_QH_ret.fileReport) {
+                if (ptr.attribute == 0) {
+                    map_fileInfo[ptr.fileHash].threat_label = "Undetected";
+                } else if (ptr.attribute == 1) {
+                    map_fileInfo[ptr.fileHash].threat_label = "Undetected";
+                    if (ptr.ages <= 3 && ptr.pop == 0) {
+                        CloudEngine::VT_FileReport VT_ret;
+                        VT_ret = CloudEngine::VT_GetFileReport(ptr.fileHash);
 
-                    if (VT_ret.httpStatus == 200) {
-                        if (VT_ret.attribute == 1) {
-                            fileInfo.threat_label = "Undetected";
-                        } else if (VT_ret.attribute == 2) {
-                            fileInfo.threat_label = VT_ret.threat_label;
-                        }
-                    } else if (VT_ret.httpStatus == 404) {
-                        //未知文件上传检测，只传一次，失败不重试
-                        CloudEngine::VT_UploadFileReport(dir, std::filesystem::file_size(dir));
-                    } else if (VT_ret.httpStatus == 429) {
-                        //此处为重试
-                        while (VT_ret.httpStatus == 429) {
-                            std::cerr << "请求达到APIKEY速率限制，等待10秒后重试" << std::endl;
-                            //Sleep为Windows API的一部分，std库中可使用std::this_thread::sleep_for()
-                            //Sleep(1000 * 10);
-                            std::this_thread::sleep_for(std::chrono::milliseconds(1000 * 10));
-                            VT_ret = CloudEngine::VT_GetFileReport(fileInfo.hash);
-
-                            if (VT_ret.httpStatus == 200) {
-                                if (VT_ret.attribute == 1) {
-                                    fileInfo.threat_label = "Undetected";
-                                } else if (VT_ret.attribute == 2) {
-                                    fileInfo.threat_label = VT_ret.threat_label;
-                                }
-                            } else if (VT_ret.httpStatus == 404) {
-                                CloudEngine::VT_UploadFileReport(dir, file_size(dir));
-                                break;
-                                //后续添加未知文件上传
-                            } else if (VT_ret.httpStatus == 429) {
-                                continue;
-                            } else {
-                                std::cerr << "VirusTotal接口异常，错误代码：" << VT_ret.httpStatus << std::endl;
+                        if (VT_ret.httpStatus == 200) {
+                            if (VT_ret.attribute == 1) {
+                                map_fileInfo[ptr.fileHash].threat_label = "Undetected";
+                            } else if (VT_ret.attribute == 2) {
+                                map_fileInfo[ptr.fileHash].threat_label = VT_ret.threat_label;
                             }
-                        }
-                    } else {
-                        std::cerr << "VirusTotal接口异常，错误代码：" << VT_ret.httpStatus << std::endl;
-                    }
+                        } else if (VT_ret.httpStatus == 404) {
+                            //未知文件上传检测，只传一次，失败不重试
+                            CloudEngine::VT_UploadFileReport(map_fileInfo[ptr.fileHash].path,
+                                                             std::filesystem::file_size(
+                                                                     map_fileInfo[ptr.fileHash].path));
+                        } else if (VT_ret.httpStatus == 429) {
+                            //此处为重试
+                            while (VT_ret.httpStatus == 429) {
+                                std::cerr << "请求达到APIKEY速率限制，等待10秒后重试" << std::endl;
+                                //Sleep为Windows API的一部分，std库中可使用std::this_thread::sleep_for()
+                                //Sleep(1000 * 10);
+                                std::this_thread::sleep_for(std::chrono::milliseconds(1000 * 10));
+                                VT_ret = CloudEngine::VT_GetFileReport(ptr.fileHash);
 
+                                if (VT_ret.httpStatus == 200) {
+                                    if (VT_ret.attribute == 1) {
+                                        map_fileInfo[ptr.fileHash].threat_label = "Undetected";
+                                    } else if (VT_ret.attribute == 2) {
+                                        map_fileInfo[ptr.fileHash].threat_label = VT_ret.threat_label;
+                                    }
+                                } else if (VT_ret.httpStatus == 404) {
+                                    CloudEngine::VT_UploadFileReport(map_fileInfo[ptr.fileHash].path,
+                                                                     file_size(map_fileInfo[ptr.fileHash].path));
+                                    break;
+                                    //后续添加未知文件上传
+                                } else if (VT_ret.httpStatus == 429) {
+                                    continue;
+                                } else {
+                                    std::cerr << "VirusTotal接口异常，错误代码：" << VT_ret.httpStatus << std::endl;
+                                }
+                            }
+                        } else {
+                            std::cerr << "VirusTotal接口异常，错误代码：" << VT_ret.httpStatus << std::endl;
+                        }
+
+                    }
+                } else if (ptr.attribute == 2) {
+                    map_fileInfo[ptr.fileHash].threat_label = ptr.threat_label;
                 }
-            } else if (QH_ret.attribute == 2) {
-                fileInfo.threat_label = QH_ret.threat_label;
             }
 
-            scanStatus.scanned++;
+            scanStatus.scanned += map_fileInfo.size();
 
             //加锁避免冲突
             coutMutex.lock();
 
-            if (fileInfo.threat_label != "Undetected") {
-                scanStatus.threat++;
-                //SetConsoleOutputCP(CP_UTF8);
-                std::wcout.imbue(std::locale("zh_CN.UTF-8"));
-                std::wcout << fileInfo.path.wstring();
-                std::cout << "    "
-                          << fileInfo.threat_label << "    "
-                          << fileInfo.hash << std::endl;
-                //std::wcout << wss.str();
+            for (const auto &ptr: map_fileInfo) {
+                if (ptr.second.threat_label != "Undetected") {
+                    scanStatus.threat++;
+                    //SetConsoleOutputCP(CP_UTF8);
+                    std::wcout.imbue(std::locale("zh_CN.UTF-8"));
+                    std::wcout << ptr.second.path.wstring();
+                    std::cout << "    "
+                              << ptr.second.threat_label << "    "
+                              << ptr.first << std::endl;
+                    //std::wcout << wss.str();
 
-                //此处存储控制台光标位置，防止内容覆写
-                if (GetConsoleScreenBufferInfo(hConsole, &csbi)) {
-                    currentCoord = csbi.dwCursorPosition;
+                    //此处存储控制台光标位置，防止内容覆写
+                    if (GetConsoleScreenBufferInfo(hConsole, &csbi)) {
+                        currentCoord = csbi.dwCursorPosition;
+                    }
                 }
             }
 

@@ -18,7 +18,7 @@
 #include <Softpub.h>
 
 // 定义FileOperation类的calculateMD5方法
-std::string FileOperation::calculateMD5(const std::filesystem::path& filePath) {
+std::string FileOperation::calculateMD5(const std::filesystem::path &filePath) {
     // 转换路径为宽字符，解决中文路径问题，MSVC编译器不使用此段代码
     /*
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, &filePath[0], (int)filePath.size(), NULL, 0);
@@ -66,7 +66,7 @@ std::string FileOperation::calculateMD5(const std::filesystem::path& filePath) {
     return {hex};
 }
 
-bool FileOperation::isPEFile(const std::filesystem::path& filePath) {
+bool FileOperation::isPEFile(const std::filesystem::path &filePath) {
     std::ifstream file(filePath, std::ios::binary);
     if (!file) {
         std::cerr << "Failed to open file: " << filePath.string() << std::endl;
@@ -82,14 +82,14 @@ bool FileOperation::isPEFile(const std::filesystem::path& filePath) {
     return buffer[0] == 'M' && buffer[1] == 'Z';
 }
 
-bool FileOperation::VerifySignature(const std::wstring& filePath) {
+bool FileOperation::VerifySignature(const std::filesystem::path &filePath) {
     //https://learn.microsoft.com/en-us/windows/win32/seccrypto/example-c-program--verifying-the-signature-of-a-pe-file
 
     // 初始化WINTRUST_FILE_INFO结构体，用于指定要验证的文件
     WINTRUST_FILE_INFO fileInfo;
     memset(&fileInfo, 0, sizeof(fileInfo));
     fileInfo.cbStruct = sizeof(WINTRUST_FILE_INFO);
-    fileInfo.pcwszFilePath = filePath.c_str();
+    fileInfo.pcwszFilePath = filePath.wstring().c_str();
     fileInfo.hFile = NULL;
     fileInfo.pgKnownSubject = NULL;
 

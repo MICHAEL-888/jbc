@@ -14,7 +14,7 @@ public:
 
     static std::string calculateMD5(const std::filesystem::path& filePath);
     static bool isPEFile(const std::filesystem::path& filePath);
-    static bool VerifySignature(const std::wstring& filePath);
+    static bool VerifySignature(const std::filesystem::path& filePath);
 };
 
 

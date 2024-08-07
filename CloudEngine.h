@@ -141,18 +141,22 @@ public:
         std::string ret;
     };
     struct QH_FileReport{
-        int httpStatus;
+        std::string fileHash;
         int attribute;  //0:safe    1:undetected    2:malware
         std::string threat_label;
         int ages;
         int pop;
+    };
+    struct vec_QH_FileReport{
+        int httpStatus;
+        std::vector<CloudEngine::QH_FileReport> fileReport;
     };
 
     static VT_FileReport VT_GetFileReport(const std::string &fileHash);
 
     static VT_UploadFile VT_UploadFileReport(const std::filesystem::path& filePath, size_t binary_size);
 
-    static QH_FileReport QH_GetFileReport(const std::string &fileHash);
+    static vec_QH_FileReport QH_GetFileReport(const std::vector<std::string> &fileHashes);
 };
 
 
